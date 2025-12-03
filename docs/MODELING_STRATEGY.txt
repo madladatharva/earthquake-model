@@ -1,0 +1,212 @@
+"""
+STRESS ZONE PREDICTION MODEL - APPROACH COMPARISON
+
+Three different ML model architectures for predicting seismic stress migration:
+
+================================================================================
+APPROACH 1: NEXT IMMEDIATE ZONE (Cluster 1 → Cluster 2)
+================================================================================
+
+What it does:
+- Predicts ONLY the very next stress zone
+- Model sees: "Current zone is Sector 5, previous 3 zones were 2→4→7"
+- Model outputs: "Next zone will be Sector 12"
+
+Impact on Model:
+✓ Simplest approach
+✓ Fastest training
+✓ Most accurate (lower prediction horizon)
+✗ Limited foresight (only 1 step)
+✗ Can't plan long-term mitigation
+
+Data Structure:
+  Input:  [Lag3_Sector=2, Lag2_Sector=4, Lag1_Sector=7, Current_Angle=45°]
+  Output: [Target_Sector=12]
+
+Workflow:
+1. Feature Engineering: Create sequences with 3-step history
+2. Train/Test Split: 1980-2005 training, 2006-2011 testing
+3. Model: XGBoost Classifier (multiclass)
+4. Evaluation: Top-1, Top-3, Top-5 accuracy (like train3.py)
+5. Visualization: Actual vs Predicted sector locations
+
+Use Case:
+→ "Where will the stress move next quarter?"
+→ Useful for monitoring immediate hazards
+
+================================================================================
+APPROACH 2: MULTIPLE STEPS AHEAD (Next 2-3 Zones)
+================================================================================
+
+What it does:
+- Predicts the SEQUENCE of next N zones (e.g., Sector 12 → Sector 8 → Sector 3)
+- Model becomes a TIME SERIES FORECASTER
+- Recurrent Neural Network (LSTM/GRU) more effective than XGBoost
+
+Impact on Model:
+✓ Longer foresight (can plan ahead)
+✓ Captures stress "migration patterns"
+✓ More scientifically interesting
+✗ Much harder to train (needs more data)
+✗ Compounding prediction errors
+✗ Requires different architecture (LSTM not XGBoost)
+
+Data Structure:
+  Input:  [Lag3_Sector=2, Lag2_Sector=4, Lag1_Sector=7, Current_Angle=45°]
+  Output: [Next_1=12, Next_2=8, Next_3=3]  ← Multiple targets
+
+Workflow:
+1. Feature Engineering: Same as Approach 1
+2. Multiple Target Labels: Create 3 separate outputs
+3. Model: LSTM or Sequence-to-Sequence model (more complex)
+4. Evaluation: Measure prediction accuracy at each step ahead
+5. Visualization: Show predicted pathway (sequence of zones)
+
+Use Case:
+→ "What is the long-term stress trajectory over 3 events?"
+→ Better for stress pattern analysis
+
+================================================================================
+APPROACH 3: TEMPORAL CONTEXT (Time-Aware Prediction)
+================================================================================
+
+What it does:
+- Incorporates TIME DELTA between stress events
+- Model learns: "Stress stayed in Sector 5 for 30 days, then moved to Sector 7"
+- Predicts BOTH: Next zone AND how long it stays
+
+Impact on Model:
+✓ More realistic (earthquakes have temporal patterns)
+✓ Can predict stress "duration" in each zone
+✓ Better matches real seismic behavior
+✗ Requires handling continuous time variables
+✗ More complex feature engineering
+
+Data Structure:
+  Input:  [Lag3_Sector=2, Lag3_DaysAgo=90, Lag2_Sector=4, Lag2_DaysAgo=60, ...]
+  Output: [Target_Sector=12, DaysInSector=45]  ← Zone + Duration
+
+Workflow:
+1. Feature Engineering: Add time deltas between cluster events
+2. Dual Outputs: Sector classification + Duration regression
+3. Model: XGBoost + Regression head (multi-task learning)
+4. Evaluation: Accuracy for zone + Mean Absolute Error for duration
+5. Visualization: Show zones WITH temporal evolution
+
+Use Case:
+→ "Stress will move to Sector 12 and stay for ~45 days"
+→ Critical for early warning systems
+
+================================================================================
+HYBRID APPROACH (RECOMMENDED): COMPREHENSIVE MODEL
+================================================================================
+
+Combines all three aspects:
+1. IMMEDIATE PREDICTION: Next zone (primary target)
+2. HORIZON FORECASTING: Show 2-3 step pathway (secondary output)
+3. TEMPORAL AWARENESS: Predict duration in zone (tertiary output)
+
+Model Architecture:
+┌─────────────────┐
+│  Input Features │ (Lag sectors, angles, time deltas)
+├─────────────────┤
+│  XGBoost Core   │ (Base prediction engine)
+├─────────────────┤
+│  Output Layer 1 │ → Next Sector (Classification)
+│  Output Layer 2 │ → Following Sectors (2-3 steps) (Sequence)
+│  Output Layer 3 │ → Duration in Zone (Regression)
+└─────────────────┘
+
+Workflow:
+1. Feature Engineering: 3-step lookback + time deltas + angle/bearing
+2. Train/Test: 1980-2005 train, 2006-2011 test
+3. Multi-Output Model: Predicts zone + pathway + duration
+4. Evaluation: 
+   - Zone accuracy (Top-1, Top-3, Top-5)
+   - Pathway coherence (does sequence make geophysical sense?)
+   - Duration MAE (mean error in predicted days)
+5. Visualization:
+   - Sector heatmaps (actual vs predicted)
+   - Stress pathways (animated sequence)
+   - Time series of predictions vs actuals
+
+Use Case:
+→ Complete stress migration forecasting
+→ Scientific + Practical value
+
+================================================================================
+EFFECT ON "clean.py" AND WORKFLOW
+================================================================================
+
+Approach 1 (NEXT ZONE):
+✓ clean.py works AS-IS
+✓ Generates earthquake_ml_dataset.csv
+✓ Train model: stress_predictor_v1.py
+
+Approach 2 (MULTIPLE STEPS):
+~ Modify clean.py to create MULTIPLE target columns
+  - Add: Target_Sector_N+1, Target_Sector_N+2, Target_Sector_N+3
+~ Generate: earthquake_ml_dataset_sequence.csv
+~ Train model: stress_predictor_v2_lstm.py (requires TensorFlow/Keras)
+
+Approach 3 (TEMPORAL):
+~ Modify clean.py to extract time deltas (already has this!)
+  - Add: DaysInCurrentSector (time before moving)
+~ Generate: earthquake_ml_dataset_temporal.csv
+~ Train model: stress_predictor_v3_temporal.py
+
+HYBRID (ALL THREE):
+~ Modify clean.py to include all features + all targets
+~ Generate: earthquake_ml_dataset_comprehensive.csv
+~ Train model: stress_predictor_hybrid.py
+
+================================================================================
+RECOMMENDATION FOR YOUR USE CASE
+================================================================================
+
+Given your earthquake data and uptop.py heatmaps:
+
+BUILD: HYBRID COMPREHENSIVE MODEL
+Reasons:
+1. Your data has clear directional patterns (Angle_wrt_X_Axis, Bearing_Degrees)
+2. clean.py already extracts time deltas → can use temporal context
+3. Stress migration is sequential → multiple-step forecasting adds value
+4. Provides complete picture: WHERE + WHEN + HOW LONG
+
+This model will:
+✓ Predict next immediate zone (most useful for alerts)
+✓ Show predicted pathway (visualize on your heatmaps)
+✓ Estimate duration (quantify stress intensity/persistence)
+✓ Evaluate on 2006-2011 like train3.py
+✓ Generate visualizations matching uptop.py style
+
+================================================================================
+NEXT STEP
+================================================================================
+
+Shall I build: STRESS_PREDICTOR_HYBRID.PY
+
+Which will have 4 sections:
+
+Section 1: DATA LOADING & PREPARATION
+- Load earthquake_ml_dataset.csv from clean.py
+- Add multiple target columns (next zone, zone+2, zone+3, duration)
+- Split train/test
+
+Section 2: MODEL ARCHITECTURE
+- XGBoost base classifier for next zone
+- Secondary outputs for pathway and duration
+- Multi-task learning approach
+
+Section 3: TRAINING & VALIDATION
+- Train on 1980-2005
+- Test on 2006-2011
+- Report accuracies for all three prediction types
+
+Section 4: VISUALIZATION (matching uptop.py style)
+- Heatmap: Predicted stress zones over time
+- Pathway: Show 3-step prediction sequence
+- Timeline: Duration predictions vs actual
+- Comparative: Actual migration vs model prediction
+
+Sound good? Should I build this now?
