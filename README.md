@@ -1,37 +1,42 @@
-# 🌍 Earthquake Cluster Analysis Dashboard
+# Earthquake Stress Migration Analysis
 
-An interactive dashboard for visualizing earthquake clustering patterns, stress zone migrations, and seismic activity predictions in the Himalayan region.
+A professional dashboard for visualizing earthquake clustering patterns, stress zone migrations, and seismic activity predictions in the Himalayan region.
 
-## 📁 Project Structure
+## Project Structure
 
 ```
-earthquak-model/
-├── dashboard.py              # Main Streamlit dashboard
-├── stress_predictor_model.py # XGBoost prediction model
+earthquake-model/
+├── dashboard.py              # Main Streamlit dashboard (professional UI)
+├── dashboard_professional.py # Alternative dashboard version
+├── stress_predictor_model.py # XGBoost stress zone prediction model
 ├── data_cleaner.py           # Data preprocessing utilities
 ├── requirements.txt          # Python dependencies
 │
 ├── data/                     # Data files
-│   ├── coordinates.csv       # Earthquake coordinates
+│   ├── coordinates.csv       # Earthquake coordinates (1980-2011)
 │   ├── cluster_summary_1980_2005.csv
 │   ├── cluster_directions_final.csv
-│   ├── test_set.csv
+│   ├── test_set.csv          # Test data for predictions
+│   ├── predicted_heatmap_data.csv
+│   ├── heatmap_grid_density.csv
 │   └── eu_in_plates.geojson  # Tectonic plate boundaries
 │
-├── globe/                    # 3D Globe visualization assets
+├── globe/                    # Globe visualization assets
 │   ├── cords.csv             # Actual vs predicted coordinates
-│   ├── textbox.py            # PyGame/OpenGL globe (standalone)
 │   └── objloader.py          # 3D model loader
 │
-├── yearly_heatmaps/          # Generated stress heatmaps
+├── yearly_heatmaps/          # Generated stress heatmaps (PNG)
 ├── yearly_heatmaps_geojson/  # GeoJSON heatmaps
 ├── stress_migration_maps/    # Migration visualizations
 ├── energy_transfer_plots/    # Energy transfer visualizations
-├── yearly_stress_predictions/# Prediction comparison maps
+├── yearly_stress_predictions/# Prediction vs actual comparison maps
+├── images/                   # Static images and assets
 │
 ├── scripts/                  # Utility scripts
 │   ├── train.py              # Model training
-│   ├── cluster_directions.py # Cluster analysis
+│   ├── cluster_directions.py # Cluster movement analysis
+│   ├── generate_heatmap_csv.py
+│   ├── distance_calculator.py
 │   └── ...                   # Other analysis scripts
 │
 └── docs/                     # Documentation
@@ -39,7 +44,7 @@ earthquak-model/
     └── MODELING_STRATEGY.txt
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 1. **Install dependencies:**
    ```bash
@@ -53,31 +58,34 @@ earthquak-model/
 
 3. **Open in browser:** http://localhost:8501
 
-## 📊 Dashboard Features
+## Dashboard Tabs
 
 | Tab | Description |
 |-----|-------------|
-| 🗺️ **Map View** | Interactive earthquake map with plate boundaries |
-| 📊 **Statistics** | Temporal analysis and magnitude distributions |
-| 🧭 **Migration** | Cluster movement patterns and directions |
-| 🔥 **Clusters** | DBSCAN clustering analysis |
-| 🌐 **3D View** | 3D scatter plot of earthquakes by depth |
-| 🌍 **Globe** | Interactive globe with actual vs predicted locations |
-| 🎯 **Predictions** | XGBoost stress zone predictions (2006-2011) |
+| **Overview** | Seismic activity map with plate boundaries and magnitude distribution |
+| **Globe** | Interactive 3D orthographic projection with multiple views and color schemes |
+| **Migration** | Cluster movement patterns and stress migration directions |
+| **Heatmaps** | Yearly stress density heatmap gallery |
+| **Predictions** | XGBoost stress zone predictions with actual vs predicted comparisons |
+| **Data** | Raw data exploration with 3D visualization (lat/lon/depth) |
 
-## 🔧 Tech Stack
+## Tech Stack
 
-- **Frontend:** Streamlit, Plotly
-- **ML Model:** XGBoost
-- **Data:** Pandas, NumPy
-- **Visualization:** Plotly, PyGame/OpenGL (globe)
+- **Frontend:** Streamlit
+- **Visualization:** Plotly (interactive maps, 3D scatter, globe projections)
+- **ML Model:** XGBoost (stress zone classification)
+- **Data Processing:** Pandas, NumPy
 
-## 📈 Model Performance
+## Model Details
 
 - **Training Period:** 1980-2005
 - **Test Period:** 2006-2011
-- **Grid System:** 8×8 sectors (LAT: 5-40°N, LON: 65-100°E)
+- **Grid System:** 8x8 sectors covering LAT: 5-40°N, LON: 65-100°E
+- **Features:** Temporal patterns, spatial clustering, magnitude distributions
 
-## 🎨 Theme
+## Color Scheme
 
-Fire/Lava color scheme with dark mode UI for optimal visualization of seismic data.
+Professional dark theme with seismic-inspired warm color palette:
+- Primary: Burnt orange (#c2410c, #ea580c)
+- Accent: Teal (#0d9488, #14b8a6)
+- Background: Zinc dark (#18181b, #1c1c22)
